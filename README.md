@@ -5,7 +5,7 @@ Well, this is it. A machine to even out price rates of coins on different exchan
 
 So this is just a fun project to code against the exchange APIs. Maybe it's useful as a starting point to somebody. Currently supported exchanges are Bittrex, Poloniex, Cryptopia and HitBtc. But it can easily be extended (see `Exchange[_]`).
 
-To run the machine you'll need API keys from the exchanges you want to use and put them into the object `money.machine.adatper.ApiKeys` with a method `def apply(e: Exchange[_]): (String, String)` that returns the api and private key for an `Exchange`. And you'll need some coins on the exchanges where you want to trade.
+To run the machine you'll need API keys from the exchanges you want to use and put them into the object `money.machine.adapter.ApiKeys` with a method `def apply(e: Exchange[_]): (String, String)` that returns the api and private key for an `Exchange`. And you'll need some coins on the exchanges where you want to trade.
 
 Then, as an example, when you type in the REPL something like 
 
