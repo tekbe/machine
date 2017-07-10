@@ -1,19 +1,19 @@
 # The Incredible Money Machine
 
 Ever thought of buying crypto coins low at one exchange and sell them higher at another? 
-Well, this is it. A machine to even out price rates of coins on different exchanges. Of course, people are doing this already. But on lucky days maybe you cant make 50 cent.
+Well, this is it. A machine to even out price rates of coins on different exchanges. Of course, people are doing this already. But on lucky days you cant make 50 cent.
 
-So this is just a fun project to code against the exchange APIs. Maybe it's useful to somebody. Currently supported exchanges are Bittrex, Poloniex, Cryptopia and HitBtc. 
+So this is just a fun project to code against the exchange APIs. Maybe it's useful as a starting point to somebody. Currently supported exchanges are Bittrex, Poloniex, Cryptopia and HitBtc. But it can easily be extended (see `Exchange[_]`).
 
-To run the machine you'll need api keys from the exchanges you want to use and put them into the object `money.machine.adatper.ApiKeys` with a method `def apply(e: Exchange[_]): (String, String)` that returns the api and private key for an `Exchange`. And you'll need some coins on the exchanges where you want to trade.
+To run the machine you'll need API keys from the exchanges you want to use and put them into the object `money.machine.adatper.ApiKeys` with a method `def apply(e: Exchange[_]): (String, String)` that returns the api and private key for an `Exchange`. And you'll need some coins on the exchanges where you want to trade.
 
-Then you hit something like this 
+Then, as an example, when you type in the REPL something like 
 
 ~~~
 MoneyMachine.run(Cryptopia, Poloniex, Bittrex)(XMR, BTC)
 ~~~
 
-and the machine will try to sell XMR for BTC at one exchange and buy XMR for BTC at another if it's profitable.
+the machine will sell XMR for BTC at one exchange and buy XMR for BTC at another if it's profitable.
 
 ~~~
 [info] Code Statistics for project:
