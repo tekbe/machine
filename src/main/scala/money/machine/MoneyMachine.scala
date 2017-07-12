@@ -3,6 +3,7 @@ package money.machine
 import java.time.LocalTime
 
 import money.machine.Akka._
+import money.machine.Akka.actorSystem.scheduler
 import money.machine.ExchangeBalances.sufficientBalance
 import money.machine.ExchangeRate.{SOME_EXCHANGE, SOME_EXCHANGERATE}
 
@@ -14,6 +15,65 @@ import scala.util.{Failure, Success}
 // @fo.rmatter:off
 object MoneyMachine {
 
+  // wait for price to drop below limit, then buy as much as possible
+  def buyBelowLimit[E <: Exchange[E], C <: Coin, CC <: Currency](e: Exchange[E], limit: PriceRate[C,CC]): Unit = {
+    ExchangeBalances.withExchanges(e)
+
+    def go(): Unit = {
+
+      e.orderBook(limit.coin, limit.currency).onComplete{
+        case Success(v) => buy(v.asks); scheduler.scheduleOnce(delay = 10 seconds)(go())
+        case Failure(t) => println(s"failed to fetch order book: ${t.getMessage}"); scheduler.scheduleOnce(delay = 10 seconds)(go())
+      }
+    }
+
+    def buy(asks: AskBook[E,C,CC]): Unit = {
+      println(s"rate: ${asks.head.priceRate} -- buy limit: $limit")
+      if (asks.offers.head.priceRate < limit) {
+        val volume = asks.coinVolume(limit)
+        val order = asks.createOrder(volume)
+        if (sufficientBalance(order)) {
+          e.place(asks.createOrder(volume), true)
+          println(s"placed order $order")
+        } else {
+          println(s"insufficient balance for order $order")
+        }
+      }
+    }
+
+    go()
+  }
+
+  // wait for price go above limit, then sell as much as possible
+  def sellAboveLimit[E <: Exchange[E], C <: Coin, CC <: Currency](e: Exchange[E], limit: PriceRate[C,CC]): Unit = {
+    ExchangeBalances.withExchanges(e)
+
+    def go(): Unit = {
+
+      e.orderBook(limit.coin, limit.currency).onComplete{
+        case Success(v) => sell(v.bids); scheduler.scheduleOnce(delay = 10 seconds)(go())
+        case Failure(t) => println(s"failed to fetch order book: ${t.getMessage}"); scheduler.scheduleOnce(delay = 10 seconds)(go())
+      }
+    }
+
+    def sell(bids: BidBook[E,C,CC]): Unit = {
+      println(s"rate: ${bids.head.priceRate} -- sell limit: $limit")
+      if (bids.offers.head.priceRate > limit) {
+        val volume = bids.coinVolume(limit)
+        val order = bids.createOrder(volume)
+        if (sufficientBalance(order)) {
+          e.place(bids.createOrder(volume), true)
+          println(s"placed order $order")
+        } else {
+          println(s"insufficient balance for order $order")
+        }
+      }
+    }
+
+    go()
+  }
+
+
   def averagePriceRate[CC <: Currency, C <: Coin](c: C, cc: CC)(es: Seq[Exchange[_]] = Exchange.exchanges) = {
     val priceRates = Await.result(Combine.combineFutures(es.map(_.priceRate(c,cc))), 10 seconds)
     PriceRate(c, priceRates.foldLeft(BigDecimal(0))((acc, rate) => acc + rate.rate) / es.size, cc)
@@ -23,6 +83,7 @@ object MoneyMachine {
     case _:BTC.type => Price(0.0001, cc)
   }
 
+  // even out price rate between given exchanges if possible
   def run[C <: Coin, CC <: Currency](es: SOME_EXCHANGE*)(c: C, cc: CC): Unit = {
 
     // gather min rate percent from exchanges (take highest rate limit as lower limit)
@@ -44,7 +105,7 @@ object MoneyMachine {
       val exchangeRate = iterator.next
       if (exchangeRate.orders(minRatePercent, minPriceDifference(cc), coinVolumeRange).isDefined) placeOrders(exchangeRate)
       else println(s"${LocalTime.now()} rate ${c} ${exchangeRate.from} -> ${exchangeRate.to} ${exchangeRate.highestPossibleRate}")
-      actorSystem.scheduler.scheduleOnce(delay = 10 seconds)(go())
+      scheduler.scheduleOnce(delay = 10 seconds)(go())
     }
 
     def printOrderInfo[E1<:Exchange[E1], E2<:Exchange[E2]](buyOrder: BuyOrder[E1, C, CC], sellOrder: SellOrder[E2, C, CC], rate: Percent) = {
