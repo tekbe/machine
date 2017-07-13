@@ -32,6 +32,11 @@ object ExchangeBalances {
     } else true
   }
 
+  def sufficientBalance[C <: Coin, CC <: Currency](newOrder: NewOrder[_, C, CC]): Boolean = newOrder match {
+    case bo@BuyOrder(_,_) => sufficientBalance(bo)
+    case so@SellOrder(_,_) => sufficientBalance(so)
+  }
+
   def sufficientBalance[C <: Coin, CC <: Currency](sellOrder: SellOrder[_, C, CC]): Boolean = {
     val balance = get(sellOrder.exchange, sellOrder.coin)
     if (!balance.isDefined) {

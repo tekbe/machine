@@ -123,6 +123,7 @@ case class AskBook[E<:Exchange[E], C <: Coin, CC <: Currency](exchange: Exchange
                                                                 time: LocalTime = LocalTime.now()) extends Book[Ask[E, C, CC], E, C, CC] {
   override def tail = AskBook(exchange, coin, currency, offers.tail, time)
   assert(Sorting.isSortedAscending(offers.map(_.volume.priceRate)))
+
   override def createOrder(coinVolume: BigDecimal): BuyOrder[E, C, CC] = {
     assert(coinVolume > 0)
     assert(coinVolume <= this.coinsAvailable)
@@ -134,6 +135,7 @@ case class AskBook[E<:Exchange[E], C <: Coin, CC <: Currency](exchange: Exchange
     assert(price <= this.priceAvailable())
     BuyOrder(exchange, TradeVolume(coinVolume(price), priceRate(price)))
   }
+
   override def coinVolume(priceRate: PriceRate[C, CC]): BigDecimal = {
     if (this.isEmpty || this.head.priceRate > priceRate) 0
     else this.head.volume.coinVolume + this.tail.coinVolume(priceRate)

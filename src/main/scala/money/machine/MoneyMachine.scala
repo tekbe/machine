@@ -15,6 +15,21 @@ import scala.util.{Failure, Success}
 // @fo.rmatter:off
 object MoneyMachine {
 
+  // buy or sell when if reached
+  protected def limitOrder[E <: Exchange[E], C <: Coin, CC <: Currency](limit: PriceRate[C, CC], book: Book[_ <: Offer[E, C, CC], E, C, CC]): Unit = {
+    println(s"rate: ${book.head.priceRate} -- limit: $limit")
+    val volume = book.coinVolume(limit)
+    if (volume > 0) {
+      val order = book.createOrder(volume)
+      if (sufficientBalance(order)) {
+        order.exchange.place(book.createOrder(volume), true)
+        println(s"placed order $order")
+      } else {
+        println(s"insufficient balance for order $order. exiting...")
+      }
+    }
+  }
+
   // wait for price to drop below limit, then buy as much as possible
   def buyBelowLimit[E <: Exchange[E], C <: Coin, CC <: Currency](e: Exchange[E], limit: PriceRate[C,CC]): Unit = {
     ExchangeBalances.withExchanges(e)
@@ -22,22 +37,8 @@ object MoneyMachine {
     def go(): Unit = {
 
       e.orderBook(limit.coin, limit.currency).onComplete{
-        case Success(v) => buy(v.asks); scheduler.scheduleOnce(delay = 10 seconds)(go())
+        case Success(v) => limitOrder(limit, v.asks); scheduler.scheduleOnce(delay = 10 seconds)(go())
         case Failure(t) => println(s"failed to fetch order book: ${t.getMessage}"); scheduler.scheduleOnce(delay = 10 seconds)(go())
-      }
-    }
-
-    def buy(asks: AskBook[E,C,CC]): Unit = {
-      println(s"rate: ${asks.head.priceRate} -- buy limit: $limit")
-      if (asks.offers.head.priceRate < limit) {
-        val volume = asks.coinVolume(limit)
-        val order = asks.createOrder(volume)
-        if (sufficientBalance(order)) {
-          e.place(asks.createOrder(volume), true)
-          println(s"placed order $order")
-        } else {
-          println(s"insufficient balance for order $order")
-        }
       }
     }
 
@@ -51,28 +52,13 @@ object MoneyMachine {
     def go(): Unit = {
 
       e.orderBook(limit.coin, limit.currency).onComplete{
-        case Success(v) => sell(v.bids); scheduler.scheduleOnce(delay = 10 seconds)(go())
+        case Success(v) => limitOrder(limit, v.bids); scheduler.scheduleOnce(delay = 10 seconds)(go())
         case Failure(t) => println(s"failed to fetch order book: ${t.getMessage}"); scheduler.scheduleOnce(delay = 10 seconds)(go())
-      }
-    }
-
-    def sell(bids: BidBook[E,C,CC]): Unit = {
-      println(s"rate: ${bids.head.priceRate} -- sell limit: $limit")
-      if (bids.offers.head.priceRate > limit) {
-        val volume = bids.coinVolume(limit)
-        val order = bids.createOrder(volume)
-        if (sufficientBalance(order)) {
-          e.place(bids.createOrder(volume), true)
-          println(s"placed order $order")
-        } else {
-          println(s"insufficient balance for order $order")
-        }
       }
     }
 
     go()
   }
-
 
   def averagePriceRate[CC <: Currency, C <: Coin](c: C, cc: CC)(es: Seq[Exchange[_]] = Exchange.exchanges) = {
     val priceRates = Await.result(Combine.combineFutures(es.map(_.priceRate(c,cc))), 10 seconds)
