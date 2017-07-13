@@ -22,19 +22,19 @@ the machine will sell XMR for BTC at one exchange and buy XMR for BTC at another
 [info] - Total:      12 files
 [info] - Scala:      12 files (100,0%)
 [info] - Java:       0 files (0,0%)
-[info] - Total size: 61.733 Bytes
-[info] - Avg size:   5.144 Bytes
-[info] - Avg length: 122 lines
+[info] - Total size: 63.782 Bytes
+[info] - Avg size:   5.315 Bytes
+[info] - Avg length: 126 lines
 [info] 
 [info] Lines
-[info] - Total:      1.467 lines
-[info] - Code:       1.048 lines (71,4%)
-[info] - Comment:    94 lines (6,4%)
-[info] - Blank:      325 lines (22,2%)
-[info] - Bracket:    118 lines (8,0%)
+[info] - Total:      1.521 lines
+[info] - Code:       1.086 lines (71,4%)
+[info] - Comment:    98 lines (6,4%)
+[info] - Blank:      337 lines (22,2%)
+[info] - Bracket:    128 lines (8,4%)
 [info] 
 [info] Characters
-[info] - Total:      56.080 chars
-[info] - Code:       52.858 chars (94,3%)
-[info] - Comment:    3.222 chars (5,7%)
+[info] - Total:      57.891 chars
+[info] - Code:       54.451 chars (94,1%)
+[info] - Comment:    3.440 chars (5,9%)
 ~~~
